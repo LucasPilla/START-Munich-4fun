@@ -16,6 +16,7 @@ class ImagePickerSection extends StatelessWidget {
   final dynamic pickImageError;
   final VoidCallback onCameraTap;
   final VoidCallback onGalleryTap;
+  final VoidCallback? onProfileTap;
 
   const ImagePickerSection({
     super.key,
@@ -31,6 +32,7 @@ class ImagePickerSection extends StatelessWidget {
     this.pickImageError,
     required this.onCameraTap,
     required this.onGalleryTap,
+    this.onProfileTap,
   });
 
   @override
@@ -63,31 +65,34 @@ class ImagePickerSection extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildImagePickerButton(
-                  icon: Icons.camera_alt_rounded,
-                  label: 'Camera',
-                  onTap: onCameraTap,
-                ),
-                const SizedBox(width: 24),
-                _buildImagePickerButton(
-                  icon: Icons.photo_library_rounded,
-                  label: 'Gallery',
-                  onTap: onGalleryTap,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
             Text(
               isAnalyzing ? 'Analyzing skin image...' : 'Choose an image to analyze',
               style: TextStyle(
-                fontSize: 14,
-                color: colorScheme.onSurface.withOpacity(0.6),
-                fontWeight: FontWeight.w500,
+                fontSize: 16,
+                color: colorScheme.onSurface.withOpacity(0.8),
+                fontWeight: FontWeight.w600,
               ),
             ),
+            const SizedBox(height: 24),
+            _buildImagePickerButton(
+              icon: Icons.camera_alt_rounded,
+              label: 'Camera',
+              onTap: onCameraTap,
+            ),
+            const SizedBox(height: 16),
+            _buildImagePickerButton(
+              icon: Icons.photo_library_rounded,
+              label: 'Gallery',
+              onTap: onGalleryTap,
+            ),
+            if (onProfileTap != null) ...[
+              const SizedBox(height: 16),
+              _buildImagePickerButton(
+                icon: Icons.person_rounded,
+                label: 'Profile',
+                onTap: onProfileTap!,
+              ),
+            ],
             if (pickedImage != null) ...[
               const SizedBox(height: 24),
               Container(
@@ -187,46 +192,50 @@ class ImagePickerSection extends StatelessWidget {
   }) {
     return GestureDetector(
       onTap: isAnalyzing ? null : onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  colorScheme.primary,
-                  colorScheme.primary.withOpacity(0.8),
-                ],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.4),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                  spreadRadius: 2,
-                ),
+      child: Opacity(
+        opacity: isAnalyzing ? 0.5 : 1.0,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colorScheme.primary,
+                colorScheme.primary.withOpacity(0.8),
               ],
             ),
-            child: Icon(
-              icon,
-              size: 40,
-              color: colorScheme.onPrimary,
-            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.primary.withOpacity(0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+                spreadRadius: 2,
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: colorScheme.onSurface.withOpacity(0.7),
-              fontWeight: FontWeight.w500,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 24,
+                color: colorScheme.onPrimary,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: colorScheme.onPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

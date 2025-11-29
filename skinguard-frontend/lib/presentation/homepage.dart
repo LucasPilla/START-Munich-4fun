@@ -8,6 +8,7 @@ import 'package:skinguard/domain/models/skin_analysis_result.dart';
 import 'package:skinguard/presentation/widgets/header_widget.dart';
 import 'package:skinguard/presentation/widgets/image_picker_section.dart';
 import 'package:skinguard/presentation/widgets/analysis_result_widget.dart';
+import 'package:skinguard/presentation/profile_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -158,6 +159,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     pickImageError: _pickImageError,
                     onCameraTap: () => _pickAndAnalyzeImage(true),
                     onGalleryTap: () => _pickAndAnalyzeImage(false),
+                    onProfileTap: _navigateToProfile,
                   ),
                   // Analysis result
                   if (_analysisResult != null) ...[
@@ -203,7 +205,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 68),
                 ],
               ),
             ),
@@ -220,6 +222,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       _analysisError = null;
       _pickImageError = null;
     });
+  }
+
+  void _navigateToProfile() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const ProfilePage(),
+      ),
+    );
   }
 
   void _startLoadingMessageCycle() {
