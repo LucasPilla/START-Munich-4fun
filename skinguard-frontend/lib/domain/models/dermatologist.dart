@@ -7,6 +7,7 @@ class Dermatologist {
   final double longitude;
   final double distance; // in kilometers
   final DateTime nextAvailableTime;
+  final List<DateTime> availableDates; // List of all available dates/times
   final double? rating;
   final String? phoneNumber;
   final String? email;
@@ -20,10 +21,40 @@ class Dermatologist {
     required this.longitude,
     required this.distance,
     required this.nextAvailableTime,
+    required this.availableDates,
     this.rating,
     this.phoneNumber,
     this.email,
   });
+
+  /// Check if dermatologist is available on a specific date
+  bool isAvailableOnDate(DateTime date) {
+    final targetDate = DateTime(date.year, date.month, date.day);
+    return availableDates.any((availableDate) {
+      final availableDateOnly = DateTime(
+        availableDate.year,
+        availableDate.month,
+        availableDate.day,
+      );
+      return availableDateOnly.isAtSameMomentAs(targetDate);
+    });
+  }
+
+  /// Get available times for a specific date
+  List<DateTime> getAvailableTimesForDate(DateTime date) {
+    final targetDate = DateTime(date.year, date.month, date.day);
+    return availableDates
+        .where((availableDate) {
+          final availableDateOnly = DateTime(
+            availableDate.year,
+            availableDate.month,
+            availableDate.day,
+          );
+          return availableDateOnly.isAtSameMomentAs(targetDate);
+        })
+        .toList()
+      ..sort();
+  }
 
   String get formattedDistance {
     if (distance < 1) {
