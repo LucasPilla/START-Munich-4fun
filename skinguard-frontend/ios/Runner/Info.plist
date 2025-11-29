@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Skinguard needs access to your camera to take photos of your skin for analysis.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Skinguard needs access to your photo library to select images for skin analysis.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Skinguard needs access to save analyzed images to your photo library.</string>
 </dict>
 </plist>
