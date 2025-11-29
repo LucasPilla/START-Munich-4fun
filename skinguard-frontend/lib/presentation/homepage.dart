@@ -7,7 +7,8 @@ import 'package:skinguard/services/image_picker_service.dart';
 import 'package:skinguard/domain/models/skin_analysis_result.dart';
 import 'package:skinguard/presentation/widgets/header_widget.dart';
 import 'package:skinguard/presentation/widgets/image_picker_section.dart';
-import 'package:skinguard/presentation/widgets/analysis_result_widget.dart';
+import 'package:skinguard/presentation/widgets/analysis_dialog.dart';
+import 'package:skinguard/presentation/widgets/image_preview_dialog.dart';
 import 'package:skinguard/presentation/profile_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -161,15 +162,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     onGalleryTap: () => _pickAndAnalyzeImage(false),
                     onProfileTap: _navigateToProfile,
                   ),
-                  // Analysis result
-                  if (_analysisResult != null) ...[
-                    const SizedBox(height: 24),
-                    AnalysisResultWidget(
-                      result: _analysisResult!,
-                      colorScheme: colorScheme,
-                      onReset: _resetAnalysis,
-                    ),
-                  ],
                   // Analysis error
                   if (_analysisError != null) ...[
                     const SizedBox(height: 24),
@@ -266,6 +258,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           _loadingMessageIndex = 0;
         });
         
+        // Show image preview dialog
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _pickedImage != null) {
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              builder: (context) => ImagePreviewDialog(
+                pickedImage: _pickedImage!,
+                colorScheme: Theme.of(context).colorScheme,
+                isAnalyzing: _isAnalyzing,
+                loadingMessageIndex: _loadingMessageIndex,
+                loadingMessages: _loadingMessages,
+                pulseAnimation: _pulseAnimation,
+                rotateAnimation: _rotateAnimation,
+                pulseController: _pulseController,
+              ),
+            );
+          }
+        });
+        
         // Cycle through loading messages
         _startLoadingMessageCycle();
         
@@ -281,6 +293,25 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             _analysisResult = mockResult;
             _isAnalyzing = false;
             _analysisError = null;
+          });
+          // Close image dialog and show analysis dialog after state update
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && _analysisResult != null) {
+              // Close image preview dialog if it's open (pop once to close any open dialog)
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              }
+              // Show analysis dialog
+              showDialog(
+                context: context,
+                barrierDismissible: true,
+                builder: (context) => AnalysisDialog(
+                  result: _analysisResult!,
+                  colorScheme: Theme.of(context).colorScheme,
+                  onReset: _resetAnalysis,
+                ),
+              );
+            }
           });
         }
         
@@ -340,13 +371,25 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     
     switch (random) {
       case 0:
-        // High severity issue
+        // High severity issue - Eczema example
         return SkinAnalysisResult(
           hasProblem: true,
           description: 'The analysis detected a potential skin concern that requires professional attention. The image shows signs of irregular pigmentation and texture changes. It is strongly recommended to consult with a dermatologist for a professional evaluation. Early detection and treatment are important for skin health.',
-          condition: 'Irregular Pigmentation',
+          condition: 'Eczema',
           confidence: 0.87,
           severity: Severity.high,
+          diseaseDescription: 'Eczema, or atopic dermatitis, is a chronic inflammatory skin condition characterized by itchy, red, and dry skin patches. It is often triggered by environmental factors and can vary in severity.',
+          severityLevel: 'Medium',
+          immediateAction: 'Apply a fragrance-free moisturizer to affected areas and avoid known triggers such as harsh soaps, detergents, and allergens.',
+          thingsToKeepInMind: [
+            'Eczema can worsen with stress and in dry environments.',
+            'Certain fabrics like wool may exacerbate symptoms; choose soft, breathable clothing.',
+            'Keep nails trimmed to prevent skin damage from scratching.',
+            'Track any new skincare products or environmental changes that might trigger flare-ups.',
+            'Consider a humidifier in dry home environments.',
+          ],
+          consultDoctor: true,
+          consultDoctorReasoning: 'A doctor can provide a more accurate diagnosis, assess for potential infections, and prescribe stronger treatments if over-the-counter options are ineffective.',
         );
       case 1:
         // No issues
@@ -356,6 +399,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           condition: 'Healthy Skin',
           confidence: 0.92,
           severity: Severity.none,
+          diseaseDescription: 'Your skin appears healthy with no significant concerns detected.',
+          severityLevel: 'None',
+          immediateAction: 'Continue with your regular skincare routine and maintain good sun protection habits.',
+          thingsToKeepInMind: [
+            'Use sunscreen daily to protect against UV damage.',
+            'Stay hydrated and maintain a balanced diet.',
+            'Get adequate sleep for skin regeneration.',
+          ],
+          consultDoctor: false,
         );
       case 2:
         // Medium severity
@@ -365,6 +417,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           condition: 'Skin Variation Detected',
           confidence: 0.75,
           severity: Severity.medium,
+          diseaseDescription: 'The analysis shows some skin variations that may indicate mild irritation or dryness. These changes are typically manageable with proper skincare.',
+          severityLevel: 'Medium',
+          immediateAction: 'Apply a gentle, fragrance-free moisturizer and use sunscreen to protect the affected area. Avoid harsh skincare products.',
+          thingsToKeepInMind: [
+            'Monitor the area for any changes in size, color, or texture.',
+            'Avoid picking or scratching the affected area.',
+            'Use gentle, hypoallergenic skincare products.',
+            'Consider keeping a skincare diary to track any triggers.',
+          ],
+          consultDoctor: true,
+          consultDoctorReasoning: 'If symptoms persist or worsen, a healthcare professional can provide a more accurate diagnosis and treatment plan.',
         );
       default:
         // Low severity
@@ -374,6 +437,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           condition: 'Minor Skin Variation',
           confidence: 0.68,
           severity: Severity.low,
+          diseaseDescription: 'Minor skin variations detected that are likely benign and related to normal skin texture or mild dryness.',
+          severityLevel: 'Low',
+          immediateAction: 'Continue with your regular skincare routine. Apply moisturizer if the area feels dry.',
+          thingsToKeepInMind: [
+            'These variations are typically harmless.',
+            'Monitor for any changes over time.',
+            'Maintain a consistent skincare routine.',
+          ],
+          consultDoctor: false,
         );
     }
   }

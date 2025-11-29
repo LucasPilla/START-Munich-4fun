@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:skinguard/presentation/widgets/loading_overlay_widget.dart';
+import 'package:skinguard/presentation/widgets/image_preview_dialog.dart';
 
 class ImagePickerSection extends StatelessWidget {
   final ColorScheme colorScheme;
@@ -93,92 +94,127 @@ class ImagePickerSection extends StatelessWidget {
                 onTap: onProfileTap!,
               ),
             ],
-            if (pickedImage != null) ...[
-              const SizedBox(height: 24),
-              Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: colorScheme.primary.withOpacity(0.3),
-                    width: 2,
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      RepaintBoundary(
-                        key: ValueKey(pickedImage!.path),
-                        child: Image.file(
-                          File(pickedImage!.path),
-                          key: ValueKey(pickedImage!.path),
-                          fit: BoxFit.cover,
-                          cacheWidth: 800,
-                          cacheHeight: 600,
-                          isAntiAlias: true,
-                          filterQuality: FilterQuality.medium,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Center(
-                              child: Text(
-                                'Error loading image',
-                                style: TextStyle(
-                                  color: colorScheme.error,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      if (isAnalyzing)
-                        LoadingOverlayWidget(
-                          colorScheme: colorScheme,
-                          pulseAnimation: pulseAnimation,
-                          rotateAnimation: rotateAnimation,
-                          pulseController: pulseController,
-                          loadingMessageIndex: loadingMessageIndex,
-                          loadingMessages: loadingMessages,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-            if (pickImageError != null) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colorScheme.errorContainer.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: colorScheme.error.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.error_outline_rounded,
-                      color: colorScheme.error,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Error: $pickImageError',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: colorScheme.error,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            // if (pickedImage != null) ...[
+            //   const SizedBox(height: 24),
+            //   GestureDetector(
+            //     onTap: () {
+            //       showDialog(
+            //         context: context,
+            //         barrierDismissible: true,
+            //         builder: (context) => ImagePreviewDialog(
+            //           pickedImage: pickedImage!,
+            //           colorScheme: colorScheme,
+            //           isAnalyzing: isAnalyzing,
+            //           loadingMessageIndex: isAnalyzing ? loadingMessageIndex : null,
+            //           loadingMessages: isAnalyzing ? loadingMessages : null,
+            //           pulseAnimation: isAnalyzing ? pulseAnimation : null,
+            //           rotateAnimation: isAnalyzing ? rotateAnimation : null,
+            //           pulseController: isAnalyzing ? pulseController : null,
+            //         ),
+            //       );
+            //     },
+            //     child: Container(
+            //       height: 200,
+            //       decoration: BoxDecoration(
+            //         borderRadius: BorderRadius.circular(16),
+            //         border: Border.all(
+            //           color: colorScheme.primary.withOpacity(0.3),
+            //           width: 2,
+            //         ),
+            //       ),
+            //       child: ClipRRect(
+            //         borderRadius: BorderRadius.circular(14),
+            //         child: Stack(
+            //           fit: StackFit.expand,
+            //           children: [
+            //             RepaintBoundary(
+            //               key: ValueKey(pickedImage!.path),
+            //               child: Image.file(
+            //                 File(pickedImage!.path),
+            //                 key: ValueKey(pickedImage!.path),
+            //                 fit: BoxFit.cover,
+            //                 cacheWidth: 800,
+            //                 cacheHeight: 600,
+            //                 isAntiAlias: true,
+            //                 filterQuality: FilterQuality.medium,
+            //                 errorBuilder: (context, error, stackTrace) {
+            //                   return Center(
+            //                     child: Text(
+            //                       'Error loading image',
+            //                       style: TextStyle(
+            //                         color: colorScheme.error,
+            //                       ),
+            //                     ),
+            //                   );
+            //                 },
+            //               ),
+            //             ),
+            //             if (isAnalyzing)
+            //               LoadingOverlayWidget(
+            //                 colorScheme: colorScheme,
+            //                 pulseAnimation: pulseAnimation,
+            //                 rotateAnimation: rotateAnimation,
+            //                 pulseController: pulseController,
+            //                 loadingMessageIndex: loadingMessageIndex,
+            //                 loadingMessages: loadingMessages,
+            //               ),
+            //             // Tap indicator
+            //             Positioned(
+            //               top: 8,
+            //               right: 8,
+            //               child: Container(
+            //                 padding: const EdgeInsets.all(8),
+            //                 decoration: BoxDecoration(
+            //                   color: Colors.black.withOpacity(0.5),
+            //                   shape: BoxShape.circle,
+            //                 ),
+            //                 child: Icon(
+            //                   Icons.fullscreen_rounded,
+            //                   color: Colors.white,
+            //                   size: 20,
+            //                 ),
+            //               ),
+            //             ),
+            //           ],
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ],
+            // if (pickImageError != null) ...[
+            //   const SizedBox(height: 16),
+            //   Container(
+            //     padding: const EdgeInsets.all(16),
+            //     decoration: BoxDecoration(
+            //       color: colorScheme.errorContainer.withOpacity(0.3),
+            //       borderRadius: BorderRadius.circular(16),
+            //       border: Border.all(
+            //         color: colorScheme.error.withOpacity(0.3),
+            //         width: 1,
+            //       ),
+            //     ),
+            //     child: Row(
+            //       children: [
+            //         Icon(
+            //           Icons.error_outline_rounded,
+            //           color: colorScheme.error,
+            //           size: 24,
+            //         ),
+            //         const SizedBox(width: 12),
+            //         Expanded(
+            //           child: Text(
+            //             'Error: $pickImageError',
+            //             style: TextStyle(
+            //               fontSize: 14,
+            //               color: colorScheme.error,
+            //               fontWeight: FontWeight.w500,
+            //             ),
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+            // ],
           ],
         ),
       ),
