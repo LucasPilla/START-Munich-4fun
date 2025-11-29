@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:skinguard/domain/models/skin_analysis_result.dart';
 import 'package:skinguard/presentation/appointment_booking_page.dart';
-import 'package:skinguard/presentation/widgets/severity_badge_widget.dart';
 
 class AnalysisDialog extends StatefulWidget {
   final SkinAnalysisResult result;
@@ -286,7 +285,7 @@ class _AnalysisDialogState extends State<AnalysisDialog> {
             ),
             // Action buttons - matching homepage theme
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 16),
               decoration: BoxDecoration(
                 color: colorScheme.surface.withOpacity(0.8),
                 borderRadius: const BorderRadius.only(
@@ -294,55 +293,57 @@ class _AnalysisDialogState extends State<AnalysisDialog> {
                   bottomRight: Radius.circular(24),
                 ),
               ),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  if (result.shouldRecommendAppointment) ...[
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _navigateToAppointmentBooking,
-                        icon: const Icon(Icons.calendar_today_rounded, size: 20),
-                        label: const Text(
-                          'Book Appointment',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  SizedBox(
+                    width: 02,),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _navigateToAppointmentBooking,
+                      icon: const Icon(Icons.calendar_today_rounded, size: 18),
+                      label: const Text(
+                        'Book Appointment',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14,horizontal: 04),
+                        backgroundColor: colorScheme.error,
+                        foregroundColor: colorScheme.onError,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: colorScheme.error,
-                          foregroundColor: colorScheme.onError,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 0,
-                        ),
+                        elevation: 0,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  SizedBox(
-                    width: double.infinity,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
                     child: OutlinedButton.icon(
+                      iconAlignment: IconAlignment.start,
                       onPressed: () {
                         Navigator.of(context).pop();
                         widget.onReset();
                       },
                       icon: const Icon(Icons.refresh_rounded, size: 18),
                       label: const Text(
-                        'Analyze Another Image',
+                        'Analyze New Image',
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                       ),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 04),
                         side: BorderSide(
                           color: colorScheme.outline.withOpacity(0.3),
                           width: 1.5,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                       ),
                     ),
                   ),
+                  SizedBox(
+                    width: 02,)
                 ],
               ),
             ),

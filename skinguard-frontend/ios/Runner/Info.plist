@@ -51,5 +51,11 @@
 	<string>Skinguard needs access to your photo library to select images for skin analysis.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Skinguard needs access to save analyzed images to your photo library.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Skinguard needs access to your location to find nearby dermatologists.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Skinguard needs access to your location to find nearby dermatologists.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Skinguard needs access to your location to find nearby dermatologists.</string>
 </dict>
 </plist>
