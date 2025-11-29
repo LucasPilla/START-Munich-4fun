@@ -1,10 +1,13 @@
-import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:skinguard/services/image_picker_service.dart';
 // TODO: Uncomment when API is ready
 // import 'package:skinguard/data/api/skin_analysis_api.dart';
 import 'package:skinguard/domain/models/skin_analysis_result.dart';
+import 'package:skinguard/presentation/widgets/header_widget.dart';
+import 'package:skinguard/presentation/widgets/image_picker_section.dart';
+import 'package:skinguard/presentation/widgets/analysis_result_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -34,6 +37,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   SkinAnalysisResult? _analysisResult;
   String? _analysisError;
   int _loadingMessageIndex = 0;
+  Timer? _loadingMessageTimer;
+
+  final List<String> _loadingMessages = [
+    'Scanning your skin...',
+    'Analyzing texture...',
+    'Detecting patterns...',
+    'Almost there...',
+  ];
 
   @override
   void initState() {
@@ -87,6 +98,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _loadingMessageTimer?.cancel();
     _fadeController.dispose();
     _slideController.dispose();
     _scaleController.dispose();
@@ -127,11 +139,70 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Header
-                  _buildHeader(colorScheme),
+                  HeaderWidget(
+                    slideAnimation: _slideAnimation,
+                    colorScheme: colorScheme,
+                  ),
                   const SizedBox(height: 48),
-                  // Camera button section
-                  _buildCameraButtonSection(colorScheme),
-
+                  // Image picker section
+                  ImagePickerSection(
+                    colorScheme: colorScheme,
+                    scaleAnimation: _scaleAnimation,
+                    pulseAnimation: _pulseAnimation,
+                    rotateAnimation: _rotateAnimation,
+                    pulseController: _pulseController,
+                    loadingMessageIndex: _loadingMessageIndex,
+                    loadingMessages: _loadingMessages,
+                    isAnalyzing: _isAnalyzing,
+                    pickedImage: _pickedImage,
+                    pickImageError: _pickImageError,
+                    onCameraTap: () => _pickAndAnalyzeImage(true),
+                    onGalleryTap: () => _pickAndAnalyzeImage(false),
+                  ),
+                  // Analysis result
+                  if (_analysisResult != null) ...[
+                    const SizedBox(height: 24),
+                    AnalysisResultWidget(
+                      result: _analysisResult!,
+                      colorScheme: colorScheme,
+                      onReset: _resetAnalysis,
+                    ),
+                  ],
+                  // Analysis error
+                  if (_analysisError != null) ...[
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.errorContainer.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: colorScheme.error.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline_rounded,
+                            color: colorScheme.error,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Analysis Error: $_analysisError',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: colorScheme.error,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                 ],
               ),
@@ -142,429 +213,31 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildHeader(ColorScheme colorScheme) {
-    return SlideTransition(
-      position: _slideAnimation,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  colorScheme.primaryContainer,
-                  colorScheme.primaryContainer.withOpacity(0.6),
-                ],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Icon(
-              Icons.health_and_safety_rounded,
-              size: 56,
-              color: colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Skinguard',
-            style: TextStyle(
-              fontSize: 42,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-              letterSpacing: -1,
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              'AI-Powered Skin Analysis',
-              style: TextStyle(
-                fontSize: 16,
-                color: colorScheme.onSurface.withOpacity(0.8),
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCameraButtonSection(ColorScheme colorScheme) {
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: Container(
-        padding: const EdgeInsets.all(40),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primaryContainer.withOpacity(0.4),
-              colorScheme.primaryContainer.withOpacity(0.2),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(
-            color: colorScheme.primary.withOpacity(0.3),
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.primary.withOpacity(0.2),
-              blurRadius: 25,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildImagePickerButton(
-                  colorScheme: colorScheme,
-                  icon: Icons.camera_alt_rounded,
-                  label: 'Camera',
-                  onTap: () => _pickAndAnalyzeImage(true),
-                ),
-                const SizedBox(width: 24),
-                _buildImagePickerButton(
-                  colorScheme: colorScheme,
-                  icon: Icons.photo_library_rounded,
-                  label: 'Gallery',
-                  onTap: () => _pickAndAnalyzeImage(false),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _isAnalyzing ? 'Analyzing skin image...' : 'Choose an image to analyze',
-              style: TextStyle(
-                fontSize: 14,
-                color: colorScheme.onSurface.withOpacity(0.6),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            if (_pickedImage != null) ...[
-              const SizedBox(height: 24),
-              Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: colorScheme.primary.withOpacity(0.3),
-                    width: 2,
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Image.file(
-                        File(_pickedImage!.path),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Text(
-                              'Error loading image',
-                              style: TextStyle(
-                                color: colorScheme.error,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      if (_isAnalyzing)
-                        _buildFunLoadingOverlay(colorScheme),
-                    ],
-                  ),
-                ),
-              ),
-              if (!_isAnalyzing && _analysisResult == null && _analysisError == null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'Image captured successfully!',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ],
-            if (_analysisResult != null) ...[
-              const SizedBox(height: 24),
-              _buildAnalysisResult(colorScheme),
-            ],
-            if (_analysisError != null) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colorScheme.errorContainer.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: colorScheme.error.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.error_outline_rounded,
-                      color: colorScheme.error,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Analysis Error: $_analysisError',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: colorScheme.error,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            if (_pickImageError != null) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colorScheme.errorContainer.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: colorScheme.error.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.error_outline_rounded,
-                      color: colorScheme.error,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Error: $_pickImageError',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: colorScheme.error,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+  void _resetAnalysis() {
+    setState(() {
+      _pickedImage = null;
+      _analysisResult = null;
+      _analysisError = null;
+      _pickImageError = null;
+    });
   }
 
   void _startLoadingMessageCycle() {
-    Future.delayed(const Duration(milliseconds: 800), () {
+    _loadingMessageTimer?.cancel();
+    _loadingMessageTimer = Timer.periodic(const Duration(milliseconds: 800), (timer) {
       if (mounted && _isAnalyzing) {
         setState(() {
           _loadingMessageIndex = (_loadingMessageIndex + 1) % _loadingMessages.length;
         });
-        _startLoadingMessageCycle();
+      } else {
+        timer.cancel();
       }
     });
   }
 
-  final List<String> _loadingMessages = [
-    'Scanning your skin...',
-    'Analyzing texture...',
-    'Detecting patterns...',
-    'Almost there...',
-  ];
-
-  Widget _buildFunLoadingOverlay(ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.black.withOpacity(0.7),
-            Colors.black.withOpacity(0.5),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Animated rotating icon with pulsing effect
-            ScaleTransition(
-              scale: _pulseAnimation,
-              child: RotationTransition(
-                turns: _rotateAnimation,
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.primary,
-                        colorScheme.primary.withOpacity(0.7),
-                        colorScheme.tertiary,
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.5),
-                        blurRadius: 30,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 48,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Animated dots
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(3, (index) {
-                return AnimatedBuilder(
-                  animation: _pulseController,
-                  builder: (context, child) {
-                    final delay = index * 0.2;
-                    final animationValue = (_pulseController.value + delay) % 1.0;
-                    final opacity = (animationValue < 0.5)
-                        ? animationValue * 2
-                        : 2 - (animationValue * 2);
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withOpacity(opacity),
-                        shape: BoxShape.circle,
-                      ),
-                    );
-                  },
-                );
-              }),
-            ),
-            const SizedBox(height: 20),
-            // Cycling loading message
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: Text(
-                _loadingMessages[_loadingMessageIndex],
-                key: ValueKey(_loadingMessageIndex),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Our AI is working its magic ✨',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildImagePickerButton({
-    required ColorScheme colorScheme,
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: _isAnalyzing ? null : onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  colorScheme.primary,
-                  colorScheme.primary.withOpacity(0.8),
-                ],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.4),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: Icon(
-              icon,
-              size: 40,
-              color: colorScheme.onPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: colorScheme.onSurface.withOpacity(0.7),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
+  void _stopLoadingMessageCycle() {
+    _loadingMessageTimer?.cancel();
+    _loadingMessageTimer = null;
   }
 
   Future<void> _pickAndAnalyzeImage(bool fromCamera) async {
@@ -593,6 +266,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         if (mounted) {
           // Generate mock analysis result
           final mockResult = _generateMockAnalysisResult();
+          _stopLoadingMessageCycle();
           setState(() {
             _analysisResult = mockResult;
             _isAnalyzing = false;
@@ -607,6 +281,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           final result = await _skinAnalysisApi.analyzeSkinImage(imageFile);
           
           if (mounted) {
+            _stopLoadingMessageCycle();
             setState(() {
               _analysisResult = result;
               _isAnalyzing = false;
@@ -615,6 +290,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           }
         } catch (e) {
           if (mounted) {
+            _stopLoadingMessageCycle();
             setState(() {
               _isAnalyzing = false;
               _analysisError = e.toString();
@@ -630,6 +306,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         */
       }
     } catch (e) {
+      _stopLoadingMessageCycle();
       setState(() {
         _pickImageError = e;
         _isAnalyzing = false;
@@ -649,16 +326,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   /// TODO: Remove this when real API is integrated
   SkinAnalysisResult _generateMockAnalysisResult() {
     // Randomly generate different mock results for variety
-    final random = DateTime.now().millisecond % 3;
+    final random = DateTime.now().millisecond % 4;
     
     switch (random) {
       case 0:
-        // Issue detected
+        // High severity issue
         return SkinAnalysisResult(
           hasProblem: true,
-          description: 'The analysis detected a potential skin concern. The image shows signs of irregular pigmentation and texture changes. It is recommended to consult with a dermatologist for a professional evaluation. Early detection and treatment are important for skin health.',
+          description: 'The analysis detected a potential skin concern that requires professional attention. The image shows signs of irregular pigmentation and texture changes. It is strongly recommended to consult with a dermatologist for a professional evaluation. Early detection and treatment are important for skin health.',
           condition: 'Irregular Pigmentation',
           confidence: 0.87,
+          severity: Severity.high,
         );
       case 1:
         // No issues
@@ -667,172 +345,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           description: 'Great news! The analysis shows healthy skin characteristics. Your skin appears to have good texture and even tone. Continue with your regular skincare routine and maintain good sun protection habits.',
           condition: 'Healthy Skin',
           confidence: 0.92,
+          severity: Severity.none,
         );
-      default:
-        // Minor concern
+      case 2:
+        // Medium severity
         return SkinAnalysisResult(
           hasProblem: true,
-          description: 'The analysis identified some minor skin variations that may require attention. These could be related to dryness, sun exposure, or minor irritation. Consider using a gentle moisturizer and sunscreen. If concerns persist, consult a healthcare professional.',
-          condition: 'Minor Skin Variation',
+          description: 'The analysis identified some skin variations that may require attention. These could be related to dryness, sun exposure, or minor irritation. Consider using a gentle moisturizer and sunscreen. It is recommended to consult a healthcare professional if concerns persist.',
+          condition: 'Skin Variation Detected',
           confidence: 0.75,
+          severity: Severity.medium,
+        );
+      default:
+        // Low severity
+        return SkinAnalysisResult(
+          hasProblem: true,
+          description: 'The analysis shows minor skin variations that are likely benign. These could be related to normal skin texture or minor dryness. Continue with your regular skincare routine. Monitor the area and consult a professional if you notice any changes.',
+          condition: 'Minor Skin Variation',
+          confidence: 0.68,
+          severity: Severity.low,
         );
     }
-  }
-
-  Widget _buildAnalysisResult(ColorScheme colorScheme) {
-    final result = _analysisResult!;
-    
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: result.hasProblem
-              ? [
-                  colorScheme.errorContainer.withOpacity(0.3),
-                  colorScheme.errorContainer.withOpacity(0.1),
-                ]
-              : [
-                  colorScheme.tertiaryContainer.withOpacity(0.3),
-                  colorScheme.tertiaryContainer.withOpacity(0.1),
-                ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: result.hasProblem
-              ? colorScheme.error.withOpacity(0.3)
-              : colorScheme.tertiary.withOpacity(0.3),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: (result.hasProblem
-                    ? colorScheme.error
-                    : colorScheme.tertiary)
-                .withOpacity(0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: result.hasProblem
-                      ? colorScheme.errorContainer
-                      : colorScheme.tertiaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  result.hasProblem
-                      ? Icons.warning_rounded
-                      : Icons.check_circle_rounded,
-                  color: result.hasProblem
-                      ? colorScheme.onErrorContainer
-                      : colorScheme.onTertiaryContainer,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      result.hasProblem ? 'Issue Detected' : 'No Issues Found',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: result.hasProblem
-                            ? colorScheme.onErrorContainer
-                            : colorScheme.onTertiaryContainer,
-                      ),
-                    ),
-                    if (result.condition != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        result.condition!,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: result.hasProblem
-                              ? colorScheme.onErrorContainer.withOpacity(0.8)
-                              : colorScheme.onTertiaryContainer.withOpacity(0.8),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: colorScheme.surface.withOpacity(0.6),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              result.description,
-              style: TextStyle(
-                fontSize: 15,
-                color: colorScheme.onSurface.withOpacity(0.9),
-                height: 1.5,
-              ),
-            ),
-          ),
-          if (result.confidence != null) ...[
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Icon(
-                  Icons.analytics_rounded,
-                  size: 18,
-                  color: colorScheme.onSurface.withOpacity(0.6),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Confidence: ${(result.confidence! * 100).toStringAsFixed(1)}%',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ],
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                setState(() {
-                  _pickedImage = null;
-                  _analysisResult = null;
-                  _analysisError = null;
-                  _pickImageError = null;
-                });
-              },
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Analyze Another Image'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
