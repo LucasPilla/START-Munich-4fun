@@ -7,3 +7,4 @@ class ApiConfig {
   static String get analyzeEndpoint => '$baseUrl/api/analyze';
 }
 
+
