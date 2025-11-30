@@ -81,7 +81,9 @@ A shell script that automates the CI/CD pipeline to update the live backend in s
 2.  **Amazon ECR:** securely hosts the backend Docker container.
 3.  **AWS Lambda:** Pulls the container from ECR on-demand to spin up a serverless environment. It runs the ONNX inference locally (Vision) and calls the OpenAI API (Intelligence) before returning the JSON result to the phone.
 
-### **4. Lambda Architecture**
+### **4. Architecture**
+
+<img width="1024" height="495" alt="image" src="https://github.com/user-attachments/assets/e4bed4f3-db69-4b2e-a9d1-4347b5f4bf9c" />
 
 ```mermaid
 flowchart TD
