@@ -1,10 +1,10 @@
-Basal_cell_carcinoma
-Benign_lesions
+Basal cell carcinoma
+Benign lesions
 Dermatitis
 Eczema
-Fungal_infection
-Melanocytic_nevi
+Fungal infection
+Melanocytic nevi
 Melanoma
-Psorias
-Seborrheic_keratoses
-Viral_infections
+Psoriasis
+Seborrheic keratoses
+Viral infections
