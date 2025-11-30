@@ -2,21 +2,24 @@ from openai import OpenAI
 from pydantic import BaseModel, Field
 from typing import Literal
 import json
-import os
-from dotenv import load_dotenv
 
-# Load environment variables from .env file (for local development)
-load_dotenv()
-
-# Get API key from environment variable
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    raise ValueError("OPENAI_API_KEY environment variable is not set")
-
+with open("open_ai.txt", "r") as f:
+    api_key = f.read().strip()
 client = OpenAI(api_key=api_key)
 
 
+
 def get_dermatology_assessment(disease: str, age: int, gender: str) -> dict:
+    # Check if no disease is detected
+    if disease.lower().strip() in ["nothing", "none", "no disease", "healthy"]:
+        return {
+            "disease_description": "No disease detected",
+            "severity_level": "Low",
+            "immediate_action": "No action required",
+            "things_to_keep_in_mind": ["Maintain good skin hygiene"],
+            "consult_doctor": "No",
+            "consult_doctor_reasoning": "No concerns detected"
+        }
     system_prompt = (
         f"You are an expert dermatologist API providing assessments for medical applications. "
         f"Analyze {disease} for a {age}-year-old {gender} patient. "
@@ -66,7 +69,7 @@ def get_dermatology_assessment(disease: str, age: int, gender: str) -> dict:
 
 # Example usage
 if __name__ == "__main__":
-    disease = "eczema"
+    disease = "nothing"
     age = 32
     gender = "male"
     
