@@ -39,6 +39,11 @@ git push origin main
    - Virtual CPU: **1 vCPU** (minimum, increase if needed)
    - Memory: **2 GB** (recommended for ML models)
    - Port: **8000** (already configured in apprunner.yaml)
+   
+   **Environment Variables:**
+   - Add environment variable:
+     - Key: `OPENAI_API_KEY`
+     - Value: (your OpenAI API key from `.env` file)
 
 6. **Auto Scaling:**
    - Min instances: **1**

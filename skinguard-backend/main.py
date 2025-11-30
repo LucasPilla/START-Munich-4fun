@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import onnxruntime as ort
@@ -8,6 +8,7 @@ import io
 import os
 from typing import Optional
 import uvicorn
+from llm_pipeline import get_dermatology_assessment
 
 app = FastAPI(
     title="SkinGuard API",
@@ -140,15 +141,21 @@ async def health():
     }
 
 @app.post("/predict")
-async def predict_endpoint(file: UploadFile = File(...)):
+async def predict_endpoint(
+    file: UploadFile = File(...),
+    age: Optional[int] = Form(None),
+    gender: Optional[str] = Form(None)
+):
     """
-    Predict skin condition from uploaded image
+    Predict skin condition from uploaded image and get AI assessment
     
     Args:
         file: Image file (JPEG, PNG, etc.)
+        age: Optional age of the patient (default: 30)
+        gender: Optional gender of the patient - "male", "female", or "other" (default: "other")
     
     Returns:
-        Prediction results with class and confidence
+        Combined results with model prediction and AI assessment
     """
     if session is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
@@ -156,6 +163,10 @@ async def predict_endpoint(file: UploadFile = File(...)):
     # Validate file type
     if not file.content_type.startswith('image/'):
         raise HTTPException(status_code=400, detail="File must be an image")
+    
+    # Set defaults for age and gender
+    patient_age = age if age is not None else 30
+    patient_gender = gender if gender else "other"
     
     try:
         # Read image
@@ -165,8 +176,33 @@ async def predict_endpoint(file: UploadFile = File(...)):
         # Preprocess
         processed_image = preprocess_image(image)
         
-        # Predict
-        result = predict(processed_image)
+        # Get model prediction
+        model_result = predict(processed_image)
+        predicted_disease = model_result["predicted_class"]
+        
+        # Get LLM assessment based on model prediction
+        llm_assessment = None
+        try:
+            llm_assessment = get_dermatology_assessment(
+                disease=predicted_disease,
+                age=patient_age,
+                gender=patient_gender
+            )
+        except Exception as e:
+            print(f"LLM assessment failed: {str(e)}")
+            # Continue without LLM assessment if it fails
+        
+        # Combine results
+        result = {
+            "model_prediction": {
+                "predicted_class": model_result["predicted_class"],
+                "confidence": model_result["confidence"],
+                "all_probabilities": model_result["all_probabilities"]
+            },
+            "ai_assessment": llm_assessment if llm_assessment else {
+                "error": "AI assessment unavailable"
+            }
+        }
         
         return JSONResponse(content=result)
     
