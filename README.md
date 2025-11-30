@@ -26,6 +26,10 @@ The application provides a clean interface for users to quickly analyse any skin
 
 Users can upload a picture to the application (either by taking a new one with their camera or by uploading one from their gallery). Next, the application analyses the image for them, telling the user if the skin irritation in question is some kind of disease or not. In case of disease, the application classifies the disease, and gives the user some information about its severity, treatment suggestions (only suggesting treatments that require no prescription) and some general tips on how to ease the pain. Additionally, in case of disease, the user can book a doctor’s appointment directly through the application.
 
+## ▶️ Get started
+
+To get started on Android, you can install the app via this link: https://appdistribution.firebase.dev/i/e1f9099e228d478e
+
 ## Disclaimer
 
 SkinGuard does not substitute for a doctor’s visit. It was only created to test and demonstrate the power of ONE WARE and OneAI. SkinGuard serves as a helper to get a first opinion an skin irritation for educational purposes.
