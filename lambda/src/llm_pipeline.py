@@ -29,7 +29,7 @@ def get_dermatology_assessment(disease: str, age: int, gender: str) -> dict:
         f"You MUST respond with ONLY valid JSON in this exact format (no markdown, no extra text):\n"
         f'{{\n'
         f'  "disease_description": "A 1 sentence description",\n'
-        f'  "severity_level": "High" or "Medium" or "Low",\n'
+        f'  "severity_level": "High" or "Low",\n'
         f'  "immediate_action": "What to do right now. Extremely short 1 - 3 bullet points",\n'
         f'  "things_to_keep_in_mind": ["point 1", "point 2", "point 3"],\n'
         f'  "consult_doctor": "Yes" or "No",\n'
