@@ -42,7 +42,7 @@
         <!-- Get your API key from: https://console.cloud.google.com/google/maps-apis -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCJy62lBgc5jSEX_Y5WX5BAFEPpLsuHqIY" />
+            android:value="AIzaSyDeu91w_cVI9c9vH7LRz9ViukfA_k0W4Jc" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

@@ -51,7 +51,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -70,13 +69,15 @@ class _ProfilePageState extends State<ProfilePage> {
         setState(() {
           _isSaving = false;
         });
-        
+
         final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(success 
-                ? 'Profile saved successfully!'
-                : 'Failed to save profile. Please try again.'),
+            content: Text(
+              success
+                  ? 'Profile saved successfully!'
+                  : 'Failed to save profile. Please try again.',
+            ),
             backgroundColor: success ? colorScheme.primary : colorScheme.error,
             duration: const Duration(seconds: 2),
           ),
@@ -123,7 +124,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         onPressed: () => Navigator.of(context).pop(),
                         icon: const Icon(Icons.arrow_back_rounded),
                         style: IconButton.styleFrom(
-                          backgroundColor: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                          backgroundColor: colorScheme.surfaceContainerHighest
+                              .withOpacity(0.5),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -140,7 +142,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ],
                   ),
                   const SizedBox(height: 32),
-                
+
                   // Disclaimer
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -241,7 +243,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     validator: (value) {
                       if (value != null && value.isNotEmpty) {
-                        final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                        final emailRegex = RegExp(
+                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        );
                         if (!emailRegex.hasMatch(value)) {
                           return 'Please enter a valid email address';
                         }
@@ -307,4 +311,3 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
-

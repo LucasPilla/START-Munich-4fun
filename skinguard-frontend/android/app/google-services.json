@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "703262585114",
+    "project_id": "skinguard-2025-4fun",
+    "storage_bucket": "skinguard-2025-4fun.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:703262585114:android:46cf49a879364e9d9c3ca3",
+        "android_client_info": {
+          "package_name": "com.example.skinguard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtsAZ5t0KgAZQgXqoOO7xgAcZY--VS8DM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

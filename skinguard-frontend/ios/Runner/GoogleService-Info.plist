@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyC8ol4TBm5i9Qy4w7k5lIp8gruvMyoe6K8</string>
+	<key>GCM_SENDER_ID</key>
+	<string>703262585114</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.skinguard</string>
+	<key>PROJECT_ID</key>
+	<string>skinguard-2025-4fun</string>
+	<key>STORAGE_BUCKET</key>
+	<string>skinguard-2025-4fun.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:703262585114:ios:4e030ab43d0043c19c3ca3</string>
+</dict>
+</plist>
