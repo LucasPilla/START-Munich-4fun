@@ -1,0 +1,11 @@
+Not_Infected
+Basal_cell_carcinoma
+Benign_lesions
+Dermatitis
+Eczema
+Fungal_infection
+Melanocytic_nevi
+Melanoma
+Psorias
+Seborrheic_keratoses
+Viral_infections
