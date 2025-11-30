@@ -81,6 +81,50 @@ A shell script that automates the CI/CD pipeline to update the live backend in s
 2.  **Amazon ECR:** securely hosts the backend Docker container.
 3.  **AWS Lambda:** Pulls the container from ECR on-demand to spin up a serverless environment. It runs the ONNX inference locally (Vision) and calls the OpenAI API (Intelligence) before returning the JSON result to the phone.
 
+### **4. Lambda Architecture**
+
+```mermaid
+flowchart TD
+    %% Global Styles
+    classDef plain fill:#fff,stroke:#333,stroke-width:1px;
+    classDef input fill:#e1f5ff,stroke:#0056b3,stroke-width:2px;
+    classDef output fill:#d4edda,stroke:#155724,stroke-width:2px;
+    
+    %% Entry Point
+    A[Request<br/>base64 image, age, gender]:::input --> B[Lambda Handler<br/>app.py]
+
+    %% Classification Pipeline Block
+    subgraph ClassPipeline [Classification Pipeline]
+        direction TB
+        D[Load ONNX Model] --> E[Preprocess Image]
+        E --> F[Run Inference]
+        F --> H[Output: Disease Name<br/>e.g., Melanoma]
+    end
+
+    %% Link Handler to Classification
+    B --> D
+
+    %% LLM Pipeline Block
+    subgraph LLMPipeline [LLM Pipeline]
+        direction TB
+        J[Receives Disease Name] --> K[Calls OpenAI API]
+        K --> L[Generates Assessment]
+        L --> M[Formats JSON Response]
+    end
+
+    %% Link Classification Result to LLM
+    H --> J
+
+    %% Aggregation and Response
+    M --> O[Combine Results]
+    O --> P[Response<br/>JSON format]:::output
+
+    %% Styling for the Subgraphs with Padding
+    %% Note: 'padding' relies on the specific renderer, but margin creates separation
+    style ClassPipeline fill:#f4f4f4,stroke:#333,stroke-width:2px,color:#000,margin:15px
+    style LLMPipeline fill:#f4f4f4,stroke:#333,stroke-width:2px,color:#000,margin:15px
+```
+
 ## Disclaimer
 
 SkinGuard does not substitute for a doctor’s visit. It was only created to test and demonstrate the power of ONE WARE and OneAI. SkinGuard serves as a helper to get a first opinion an skin irritation for educational purposes.
