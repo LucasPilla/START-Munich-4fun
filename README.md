@@ -30,6 +30,32 @@ Users can upload a picture to the application (either by taking a new one with t
 
 To get started on Android, you can install the app via this link: https://appdistribution.firebase.dev/i/e1f9099e228d478e
 
+Here is a concise documentation snippet for your backend, ready to be pasted into your project's `README.md`.
+
+***
+
+## 🧠 Backend & AI Pipeline
+
+The backend drives the core diagnostic logic, combining edge-optimized computer vision with medical-grade generative AI.
+
+### **1. Vision Pipeline (`onnxruntime`)**
+A custom image classification module built on One-Ware, which processes user photos to detect skin conditions.
+* **Model:** Custom-trained `.onnx` model (`model_1_2025...`) running on CPU.
+* **Preprocessing:** Accepts Base64 encoded images, resizes to target resolution, and normalizes pixel data (0-1 range).
+* **Inference:** Uses `onnxruntime` for sub-second inference speed without GPU dependency.
+* **Mapping:** Decodes prediction indices to human-readable labels via `classes.txt`.
+
+### **2. Medical Intelligence (OpenAI API)**
+A reasoning engine that translates the vision model's detection into actionable medical advice.
+* **Model:** Powered by **GPT-5** with `reasoning_effort="low"` for fast, accurate triage.
+* **Capabilities:** Uses the `web_search` tool to cross-reference diagnosis with up-to-date medical protocols.
+* **Structured Output:** Enforces strict **JSON formatting** to ensure the Flutter frontend can render dynamic "Triage Cards" (Severity, Immediate Actions, Doctor Recommendations).
+
+### **Setup & Environment**
+* **Dependencies:** `onnxruntime`, `pillow`, `openai`, `pydantic`.
+* **Configuration:** Requires an `.env` file with `OPENAI_API_KEY`.
+* **Models:** Ensure `./models/` contains the latest `.onnx` file and `classes.txt`.
+
 ## Disclaimer
 
 SkinGuard does not substitute for a doctor’s visit. It was only created to test and demonstrate the power of ONE WARE and OneAI. SkinGuard serves as a helper to get a first opinion an skin irritation for educational purposes.
