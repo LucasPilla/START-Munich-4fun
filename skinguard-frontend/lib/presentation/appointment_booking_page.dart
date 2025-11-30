@@ -1236,7 +1236,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                       // Current location button
                       Positioned(
                         bottom: 16,
-                        right: 16,
+                        left: 16,
                         child: FloatingActionButton.small(
                           onPressed: _getCurrentLocation,
                           backgroundColor: colorScheme.primary,

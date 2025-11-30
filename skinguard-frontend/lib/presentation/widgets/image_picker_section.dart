@@ -67,7 +67,8 @@ class ImagePickerSection extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              isAnalyzing ? 'Analyzing skin image...' : 'Choose an image to analyze',
+              isAnalyzing ? 'Analyzing skin image...' : 'Snap a photo, discover your skin health!',
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
                 color: colorScheme.onSurface.withOpacity(0.8),
