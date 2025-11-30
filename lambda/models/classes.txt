@@ -1,4 +1,3 @@
-Not_Infected
 Basal_cell_carcinoma
 Benign_lesions
 Dermatitis

@@ -2,12 +2,13 @@ from openai import OpenAI
 from pydantic import BaseModel, Field
 from typing import Literal
 import json
+from dotenv import load_dotenv
+import os 
 
-with open("open_ai.txt", "r") as f:
-    api_key = f.read().strip()
-client = OpenAI(api_key=api_key)
+load_dotenv()
 
-
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 def get_dermatology_assessment(disease: str, age: int, gender: str) -> dict:
     # Check if no disease is detected

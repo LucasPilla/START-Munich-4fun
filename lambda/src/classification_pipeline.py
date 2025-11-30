@@ -7,7 +7,8 @@ import io
 import os
 
 # Initialize model session (loaded once per container)
-ONNX_MODEL_PATH = "./models/model2_2025-11-30_03-02-21.onnx"
+ONNX_MODEL_PATH = "./models/model_1_2025-11-30_02-16-31.onnx"
+# ONNX_MODEL_PATH = "./models/model2_2025-11-30_03-02-21.onnx"
 
 model = None
 input_name = None
@@ -54,7 +55,11 @@ def classify_image(encoded_image: str) -> dict:
         
         # Reshape image to model input size (no preprocessing, just resize)
         image = image.resize((w, h))
+
         img_array = np.array(image, dtype=np.float32)
+        
+        # Normalize image to 0-1 range
+        img_array = img_array / 255.0
         
         # Add batch dimension
         img_array = np.expand_dims(img_array, 0)
@@ -64,8 +69,11 @@ def classify_image(encoded_image: str) -> dict:
         
         # Get prediction
         max_idx = np.argmax(output[0][:, 0])
-        disease_idx = int(output[0][max_idx][1])
-        disease_name = get_disease_name(disease_idx)
+        prob, idx = map(int, output[0][max_idx])
+        disease_name = get_disease_name(idx)
+
+        # if prob <= 0.2:
+        #     disease_name = "Nothing"
 
         return {
             'disease_name': disease_name
