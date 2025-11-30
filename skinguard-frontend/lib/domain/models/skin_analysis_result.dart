@@ -57,18 +57,44 @@ class SkinAnalysisResult {
       }
     }
 
+    // Safely parse has_problem (handle both bool and string)
+    bool hasProblem = false;
+    final hasProblemValue = json['has_problem'] ?? json['hasProblem'];
+    if (hasProblemValue is bool) {
+      hasProblem = hasProblemValue;
+    } else if (hasProblemValue is String) {
+      hasProblem = hasProblemValue.toLowerCase() == 'true' || 
+                   hasProblemValue.toLowerCase() == 'yes';
+    } else if (hasProblemValue != null) {
+      hasProblem = hasProblemValue == 1 || hasProblemValue == '1';
+    }
+    
+    // Safely parse consult_doctor (handle both bool and string)
+    bool? consultDoctor;
+    final consultDoctorValue = json['consult_doctor'];
+    if (consultDoctorValue != null) {
+      if (consultDoctorValue is bool) {
+        consultDoctor = consultDoctorValue;
+      } else if (consultDoctorValue is String) {
+        consultDoctor = consultDoctorValue.toLowerCase() == 'true' || 
+                       consultDoctorValue.toLowerCase() == 'yes';
+      } else if (consultDoctorValue is int) {
+        consultDoctor = consultDoctorValue == 1;
+      }
+    }
+    
     return SkinAnalysisResult(
-      hasProblem: json['has_problem'] ?? json['hasProblem'] ?? false,
+      hasProblem: hasProblem,
       description: json['description'] ?? '',
-      condition: json['condition'],
+      condition: json['condition']?.toString(),
       confidence: json['confidence']?.toDouble(),
       severity: severity,
-      diseaseDescription: json['disease_description'],
-      severityLevel: json['severity_level'],
-      immediateAction: json['immediate_action'],
+      diseaseDescription: json['disease_description']?.toString(),
+      severityLevel: json['severity_level']?.toString(),
+      immediateAction: json['immediate_action']?.toString(),
       thingsToKeepInMind: thingsToKeepInMind,
-      consultDoctor: json['consult_doctor'],
-      consultDoctorReasoning: json['consult_doctor_reasoning'],
+      consultDoctor: consultDoctor,
+      consultDoctorReasoning: json['consult_doctor_reasoning']?.toString(),
     );
   }
 

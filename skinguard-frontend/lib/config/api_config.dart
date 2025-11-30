@@ -1,10 +1,10 @@
 class ApiConfig {
-  // TODO: Replace with your actual API endpoint
-  // Example: 'https://your-api-endpoint.com' or 'http://localhost:8000'
-  static const String baseUrl = 'https://your-api-endpoint.com';
+  // Skin analysis API endpoint
+  static const String skinAnalysisEndpoint = 
+      'https://hdr3atqdqhhbrzzpbh77nmbiyu0gvwqx.lambda-url.eu-central-1.on.aws/';
   
   // API endpoints
-  static String get analyzeEndpoint => '$baseUrl/api/analyze';
+  static String get analyzeEndpoint => skinAnalysisEndpoint;
 }
 
 
