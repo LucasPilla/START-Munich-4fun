@@ -6,6 +6,9 @@ def lambda_handler(event, context):
     try:
         # Load image
         body = event.get('body', event)
+        if isinstance(body, str):
+            body = json.loads(body)
+            
         encoded_image = body.get('image')
         
         if not encoded_image:

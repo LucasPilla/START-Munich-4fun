@@ -7,7 +7,7 @@ import io
 import os
 
 # Initialize model session (loaded once per container)
-ONNX_MODEL_PATH = "./models/model_2_2025-11-30_02-16-31.onnx"
+ONNX_MODEL_PATH = "./models/model2_2025-11-30_03-02-21.onnx"
 
 model = None
 input_name = None
