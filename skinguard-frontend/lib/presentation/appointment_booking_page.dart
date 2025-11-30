@@ -3,7 +3,6 @@ import 'package:skinguard/domain/models/skin_analysis_result.dart';
 import 'package:skinguard/domain/models/dermatologist.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class AppointmentBookingPage extends StatefulWidget {
   final SkinAnalysisResult analysisResult;
@@ -38,6 +37,9 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
   void initState() {
     super.initState();
     _loadMockDermatologists();
+    // Set default location immediately so map always shows (don't stop loading yet)
+    _setDefaultLocation(stopLoading: false);
+    // Then try to get actual location
     _getCurrentLocation();
   }
 
@@ -56,28 +58,94 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
     });
 
     try {
-      // Request location permission
-      final status = await Permission.location.request();
-      if (!status.isGranted) {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text(
-                'Location permission is required to find nearby dermatologists',
+                'Location services are disabled. Please enable them in Settings.',
               ),
               backgroundColor: Theme.of(context).colorScheme.error,
+              duration: const Duration(seconds: 4),
             ),
           );
         }
         setState(() {
           _isLoadingLocation = false;
         });
+        // Use default location (Munich) if location services are disabled
+        _setDefaultLocation();
+        return;
+      }
+
+      // Check location permission status
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        // Request permission
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'Location permission is required to find nearby dermatologists',
+                ),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          }
+          setState(() {
+            _isLoadingLocation = false;
+          });
+          // Use default location (Munich) if permission denied
+          _setDefaultLocation();
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Location permission is permanently denied. Please enable it in Settings.',
+              ),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+        setState(() {
+          _isLoadingLocation = false;
+        });
+        // Use default location (Munich) if permission permanently denied
+        _setDefaultLocation();
         return;
       }
 
       // Get current position
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          // Return default location if timeout
+          return Position(
+            latitude: 48.1351,
+            longitude: 11.5820,
+            timestamp: DateTime.now(),
+            accuracy: 0,
+            altitude: 0,
+            altitudeAccuracy: 0,
+            heading: 0,
+            headingAccuracy: 0,
+            speed: 0,
+            speedAccuracy: 0,
+          );
+        },
       );
 
       if (mounted) {
@@ -97,20 +165,41 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
           _isLoadingLocation = false;
         });
         // Use default location (Munich) if location access fails
-        _currentPosition = Position(
-          latitude: 48.1351,
-          longitude: 11.5820,
-          timestamp: DateTime.now(),
-          accuracy: 0,
-          altitude: 0,
-          altitudeAccuracy: 0,
-          heading: 0,
-          headingAccuracy: 0,
-          speed: 0,
-          speedAccuracy: 0,
-        );
+        _setDefaultLocation();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not get location: ${e.toString()}'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
       }
     }
+  }
+
+  void _setDefaultLocation({bool stopLoading = true}) {
+    setState(() {
+      _currentPosition = Position(
+        latitude: 48.1351,
+        longitude: 11.5820,
+        timestamp: DateTime.now(),
+        accuracy: 0,
+        altitude: 0,
+        altitudeAccuracy: 0,
+        heading: 0,
+        headingAccuracy: 0,
+        speed: 0,
+        speedAccuracy: 0,
+      );
+      if (stopLoading) {
+        _isLoadingLocation = false;
+      }
+    });
+    // Update map camera to default location
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLng(const LatLng(48.1351, 11.5820)),
+    );
   }
 
   void _loadMockDermatologists() {
@@ -1157,82 +1246,78 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                   clipBehavior: Clip.antiAlias,
                   child: Stack(
                     children: [
-                      _currentPosition != null
-                          ? GoogleMap(
-                              onMapCreated: _onMapCreated,
-                              initialCameraPosition: CameraPosition(
-                                target: LatLng(
+                      GoogleMap(
+                        onMapCreated: _onMapCreated,
+                        initialCameraPosition: CameraPosition(
+                          target: _currentPosition != null
+                              ? LatLng(
                                   _currentPosition!.latitude,
                                   _currentPosition!.longitude,
-                                ),
-                                zoom: 13.0,
+                                )
+                              : const LatLng(48.1351, 11.5820), // Default to Munich
+                          zoom: 13.0,
+                        ),
+                        markers: {
+                          // Current location marker (only if we have position)
+                          if (_currentPosition != null)
+                            Marker(
+                              markerId: const MarkerId('current_location'),
+                              position: LatLng(
+                                _currentPosition!.latitude,
+                                _currentPosition!.longitude,
                               ),
-                              markers: {
-                                // Current location marker
-                                Marker(
-                                  markerId: const MarkerId('current_location'),
-                                  position: LatLng(
-                                    _currentPosition!.latitude,
-                                    _currentPosition!.longitude,
-                                  ),
-                                  icon: BitmapDescriptor.defaultMarkerWithHue(
-                                    BitmapDescriptor.hueBlue,
-                                  ),
-                                  infoWindow: const InfoWindow(
-                                    title: 'Your Location',
-                                  ),
-                                ),
-                                // Dermatologist markers
-                                ..._filteredDermatologists.map((derm) {
-                                  return Marker(
-                                    markerId: MarkerId(derm.id),
-                                    position: LatLng(
-                                      derm.latitude,
-                                      derm.longitude,
-                                    ),
-                                    icon: BitmapDescriptor.defaultMarkerWithHue(
-                                      BitmapDescriptor.hueRed,
-                                    ),
-                                    infoWindow: InfoWindow(
-                                      title: derm.name,
-                                      snippet: derm.location,
-                                    ),
-                                  );
-                                }),
-                              },
-                              myLocationEnabled: true,
-                              myLocationButtonEnabled: false,
-                              mapType: MapType.normal,
-                            )
-                          : Container(
-                              color: colorScheme.surfaceContainerHighest,
-                              child: Center(
-                                child: _isLoadingLocation
-                                    ? CircularProgressIndicator(
-                                        color: colorScheme.primary,
-                                      )
-                                    : Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.map_rounded,
-                                            size: 48,
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.3),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'Loading map...',
-                                            style: TextStyle(
-                                              color: colorScheme.onSurface
-                                                  .withOpacity(0.6),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                              icon: BitmapDescriptor.defaultMarkerWithHue(
+                                BitmapDescriptor.hueBlue,
+                              ),
+                              infoWindow: const InfoWindow(
+                                title: 'Your Location',
                               ),
                             ),
+                          // Dermatologist markers
+                          ..._filteredDermatologists.map((derm) {
+                            return Marker(
+                              markerId: MarkerId(derm.id),
+                              position: LatLng(
+                                derm.latitude,
+                                derm.longitude,
+                              ),
+                              icon: BitmapDescriptor.defaultMarkerWithHue(
+                                BitmapDescriptor.hueRed,
+                              ),
+                              infoWindow: InfoWindow(
+                                title: derm.name,
+                                snippet: derm.location,
+                              ),
+                            );
+                          }),
+                        },
+                        myLocationEnabled: _currentPosition != null,
+                        myLocationButtonEnabled: false,
+                        mapType: MapType.normal,
+                      ),
+                      // Loading overlay
+                      if (_isLoadingLocation)
+                        Container(
+                          color: colorScheme.surfaceContainerHighest.withOpacity(0.7),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CircularProgressIndicator(
+                                  color: colorScheme.primary,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Getting your location...',
+                                  style: TextStyle(
+                                    color: colorScheme.onSurface,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       // Current location button
                       Positioned(
                         bottom: 16,

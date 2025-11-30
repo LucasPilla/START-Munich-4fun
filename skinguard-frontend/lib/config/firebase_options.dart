@@ -59,10 +59,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyC8ol4TBm5i9Qy4w7k5lIp8gruvMyoe6K8',
-    appId: '1:703262585114:ios:4e030ab43d0043c19c3ca3',
+    appId: '1:703262585114:ios:349c9961dc1ab40c9c3ca3',
     messagingSenderId: '703262585114',
     projectId: 'skinguard-2025-4fun',
     storageBucket: 'skinguard-2025-4fun.firebasestorage.app',
-    iosBundleId: 'com.example.skinguard',
+    iosBundleId: 'com.4funteam.skinguardss',
   );
 }
