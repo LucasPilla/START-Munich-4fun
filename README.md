@@ -56,6 +56,31 @@ A reasoning engine that translates the vision model's detection into actionable 
 * **Configuration:** Requires an `.env` file with `OPENAI_API_KEY`.
 * **Models:** Ensure `./models/` contains the latest `.onnx` file and `classes.txt`.
 
+Here is the concise documentation for your deployment and infrastructure setup.
+
+***
+
+## ☁️ Deployment & Infrastructure
+
+The project uses a serverless, container-based architecture hosted on AWS Lambda for high scalability and low maintenance.
+
+### **1. Containerization (`Dockerfile`)**
+We package the entire backend into a Docker image optimized for AWS Lambda.
+* **Base Image:** Uses `public.ecr.aws/lambda/python:3.11` to ensure compatibility with the Lambda runtime environment.
+* **Assets:** Copies the Python source code (`src/`), dependencies (`requirements.txt`), and the critical ONNX vision models (`models/`) into the container.
+* **Handler:** Configures `app.lambda_handler` as the entry point to process incoming requests.
+
+### **2. Automated Deployment (`deploy.sh`)**
+A shell script that automates the CI/CD pipeline to update the live backend in seconds.
+* **Build:** Compiles the Docker image specifically for `linux/amd64` (required for AWS Lambda compatibility), bypassing local architecture differences (e.g., Apple Silicon).
+* **Push:** Tags and uploads the image to **Amazon ECR** (Elastic Container Registry).
+* **Update:** Triggers `aws lambda update-function-code`, forcing the running function to pull the latest image immediately.
+
+### **3. How AWS Connects Everything**
+1.  **Flutter App:** Sends the user's image via HTTP POST to the exposed **Lambda Function URL**.
+2.  **Amazon ECR:** securely hosts the backend Docker container.
+3.  **AWS Lambda:** Pulls the container from ECR on-demand to spin up a serverless environment. It runs the ONNX inference locally (Vision) and calls the OpenAI API (Intelligence) before returning the JSON result to the phone.
+
 ## Disclaimer
 
 SkinGuard does not substitute for a doctor’s visit. It was only created to test and demonstrate the power of ONE WARE and OneAI. SkinGuard serves as a helper to get a first opinion an skin irritation for educational purposes.
