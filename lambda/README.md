@@ -6,26 +6,44 @@ This AWS Lambda function provides skin disease classification and dermatological
 
 ```mermaid
 flowchart TD
-    A[Request<br/>base64 image, age, gender] --> B[Lambda Handler<br/>app.py]
-    B --> C[Classification Pipeline]
-    C --> D[Load ONNX Model]
-    D --> E[Preprocess Image]
-    E --> F[Run Inference]
-    F --> G[Map to Disease Name]
-    G --> H[disease_name<br/>e.g., Melanoma]
-    H --> I[LLM Pipeline]
-    I --> J[Receives disease_name]
-    J --> K[Calls OpenAI API]
-    K --> L[Generates Assessment]
-    L --> M[Formats JSON Response]
-    M --> N[assessment]
-    N --> O[Combine Results<br/>classification + assessment]
-    O --> P[Response<br/>JSON format]
+    %% Global Styles
+    classDef plain fill:#fff,stroke:#333,stroke-width:1px;
+    classDef input fill:#e1f5ff,stroke:#0056b3,stroke-width:2px;
+    classDef output fill:#d4edda,stroke:#155724,stroke-width:2px;
     
-    style A fill:#e1f5ff
-    style P fill:#d4edda
-    style C fill:#fff3cd
-    style I fill:#fff3cd
+    %% Entry Point
+    A[Request<br/>base64 image, age, gender]:::input --> B[Lambda Handler<br/>app.py]
+
+    %% Classification Pipeline Block
+    subgraph ClassPipeline [Classification Pipeline]
+        direction TB
+        D[Load ONNX Model] --> E[Preprocess Image]
+        E --> F[Run Inference]
+        F --> H[Output: Disease Name<br/>e.g., Melanoma]
+    end
+
+    %% Link Handler to Classification
+    B --> D
+
+    %% LLM Pipeline Block
+    subgraph LLMPipeline [LLM Pipeline]
+        direction TB
+        J[Receives Disease Name] --> K[Calls OpenAI API]
+        K --> L[Generates Assessment]
+        L --> M[Formats JSON Response]
+    end
+
+    %% Link Classification Result to LLM
+    H --> J
+
+    %% Aggregation and Response
+    M --> O[Combine Results]
+    O --> P[Response<br/>JSON format]:::output
+
+    %% Styling for the Subgraphs with Padding
+    %% Note: 'padding' relies on the specific renderer, but margin creates separation
+    style ClassPipeline fill:#f4f4f4,stroke:#333,stroke-width:2px,color:#000,margin:15px
+    style LLMPipeline fill:#f4f4f4,stroke:#333,stroke-width:2px,color:#000,margin:15px
 ```
 
 ## Supported Disease Classes
