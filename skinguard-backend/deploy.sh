@@ -1,82 +1,29 @@
 #!/bin/bash
 
-# Configuration
-AWS_ACCOUNT_ID="404338647393"  # Replace with your AWS account ID
+# --- Configuration ---
 REGION="eu-central-1"
-REPO_NAME="skinguard-api"
-IMAGE_NAME="skinguard-api"
+ACCOUNT_ID="166023636276"
+REPO_NAME="skinguard"
+FUNCTION_NAME="skinguard-function" # <--- MAKE SURE THIS MATCHES YOUR LAMBDA NAME IN AWS
+URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${REPO_NAME}"
 
-# Verify AWS account ID is set
-if [ -z "$AWS_ACCOUNT_ID" ] || [ "$AWS_ACCOUNT_ID" == "YOUR_ACCOUNT_ID" ]; then
-    echo "Getting AWS Account ID..."
-    AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-    if [ -z "$AWS_ACCOUNT_ID" ]; then
-        echo "❌ Error: Could not get AWS Account ID. Please set AWS_ACCOUNT_ID manually or configure AWS CLI."
-        exit 1
-    fi
-    echo "✅ AWS Account ID: $AWS_ACCOUNT_ID"
-else
-    echo "✅ Using AWS Account ID: $AWS_ACCOUNT_ID"
-fi
+# --- Execution ---
 
-ECR_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${REPO_NAME}"
+echo "1. Logging in to ECR..."
+aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
 
-echo "=========================================="
-echo "Deploying SkinGuard API to ECR (Frankfurt)"
-echo "=========================================="
-echo ""
+echo "2. Building Docker Image..."
+# FIXED: Added --provenance=false to solve the "manifest not supported" error
+docker build --platform linux/amd64 --provenance=false -t $REPO_NAME .
 
-echo "Step 1: Creating ECR repository..."
-aws ecr create-repository \
-    --repository-name $REPO_NAME \
-    --region $REGION \
-    2>/dev/null || echo "✅ Repository already exists"
+echo "3. Tagging Image..."
+docker tag $REPO_NAME:latest $URI:latest
 
-echo ""
-echo "Step 2: Authenticating Docker to ECR..."
-aws ecr get-login-password --region $REGION | \
-    docker login --username AWS --password-stdin $ECR_URI
+echo "4. Pushing to ECR..."
+docker push $URI:latest
 
-if [ $? -ne 0 ]; then
-    echo "❌ Error: Docker login failed. Check your AWS credentials."
-    exit 1
-fi
+echo "5. Updating Lambda Function Code..."
+# This forces Lambda to pull the new image immediately
+aws lambda update-function-code --function-name $FUNCTION_NAME --image-uri $URI:latest
 
-echo ""
-echo "Step 3: Building Docker image..."
-docker build -t $IMAGE_NAME .
-
-if [ $? -ne 0 ]; then
-    echo "❌ Error: Docker build failed."
-    exit 1
-fi
-
-echo ""
-echo "Step 4: Tagging image..."
-docker tag ${IMAGE_NAME}:latest ${ECR_URI}:latest
-
-echo ""
-echo "Step 5: Pushing image to ECR..."
-docker push ${ECR_URI}:latest
-
-if [ $? -ne 0 ]; then
-    echo "❌ Error: Docker push failed."
-    exit 1
-fi
-
-echo ""
-echo "=========================================="
-echo "✅ Deployment complete!"
-echo "=========================================="
-echo ""
-echo "ECR Image URI: ${ECR_URI}:latest"
-echo ""
-echo "Next steps:"
-echo "1. Go to AWS App Runner console"
-echo "2. Create new service"
-echo "3. Choose 'Container registry' → 'Amazon ECR'"
-echo "4. Use this image URI: ${ECR_URI}:latest"
-echo "5. Add environment variable: OPENAI_API_KEY"
-echo "6. Set port to 8000"
-echo ""
-
+echo "Done! Deployment complete."

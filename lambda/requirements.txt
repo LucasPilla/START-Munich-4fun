@@ -1,5 +1,0 @@
-onnxruntime
-numpy==1.26.4
-Pillow
-openai
-python-dotenv

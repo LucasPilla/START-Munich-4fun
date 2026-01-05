@@ -1,26 +1,17 @@
-FROM python:3.11-slim
+# 1. Use the AWS Lambda base image for Python 3.11
+FROM public.ecr.aws/lambda/python:3.11
 
-WORKDIR /app
+# 2. Copy requirements.txt
+COPY requirements.txt ${LAMBDA_TASK_ROOT}
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    libgomp1 \
-    && rm -rf /var/lib/apt/lists/*
+# 3. Install the specified packages
+RUN pip install -r requirements.txt
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# 4. Copy Python source files from src/ to Lambda task root
+COPY src/*.py ${LAMBDA_TASK_ROOT}/
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# 5. Copy models directory
+COPY models/ ${LAMBDA_TASK_ROOT}/models/
 
-# Copy application code
-COPY main.py .
-COPY llm_pipeline.py .
-COPY model/ ./model/
-
-# Expose port
-EXPOSE 8000
-
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-
+# 6. Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
+CMD [ "app.lambda_handler" ]

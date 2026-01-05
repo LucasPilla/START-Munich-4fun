@@ -1,228 +1,191 @@
-# SkinGuard Backend API
+# Lambda Function - Skin Disease Classification
 
-FastAPI-based REST API for skin condition classification using an ONNX model.
+This AWS Lambda function provides skin disease classification and dermatological assessment. It combines an image classification with ONNX model and an assessment with OpenAI LLM to provide comprehensive analysis of skin conditions.
 
-## Features
+## Architecture
 
-- FastAPI REST API with async support
-- ONNX model inference
-- Image preprocessing and prediction
-- Batch prediction support
-- CORS enabled for frontend integration
-- Health check endpoints
+```mermaid
+flowchart TD
+    %% Global Styles
+    classDef plain fill:#fff,stroke:#333,stroke-width:1px;
+    classDef input fill:#e1f5ff,stroke:#0056b3,stroke-width:2px;
+    classDef output fill:#d4edda,stroke:#155724,stroke-width:2px;
+    
+    %% Entry Point
+    A[Request<br/>base64 image, age, gender]:::input --> B[Lambda Handler<br/>app.py]
+
+    %% Classification Pipeline Block
+    subgraph ClassPipeline [Classification Pipeline]
+        direction TB
+        D[Load ONNX Model] --> E[Preprocess Image]
+        E --> F[Run Inference]
+        F --> H[Output: Disease Name<br/>e.g., Melanoma]
+    end
+
+    %% Link Handler to Classification
+    B --> D
+
+    %% LLM Pipeline Block
+    subgraph LLMPipeline [LLM Pipeline]
+        direction TB
+        J[Receives Disease Name] --> K[Calls OpenAI API]
+        K --> L[Generates Assessment]
+        L --> M[Formats JSON Response]
+    end
+
+    %% Link Classification Result to LLM
+    H --> J
+
+    %% Aggregation and Response
+    M --> O[Combine Results]
+    O --> P[Response<br/>JSON format]:::output
+
+    %% Styling for the Subgraphs with Padding
+    %% Note: 'padding' relies on the specific renderer, but margin creates separation
+    style ClassPipeline fill:#f4f4f4,stroke:#333,stroke-width:2px,color:#000,margin:15px
+    style LLMPipeline fill:#f4f4f4,stroke:#333,stroke-width:2px,color:#000,margin:15px
+```
+
+## Supported Disease Classes
+
+The model can classify the following skin conditions:
+
+1. Basal cell carcinoma
+2. Benign lesions
+3. Dermatitis
+4. Eczema
+5. Fungal infection
+6. Melanocytic nevi
+7. Melanoma
+8. Psoriasis
+9. Seborrheic keratoses
+10. Viral infections
+
+## Project Structure
+
+```
+lambda/
+├── src/
+│   ├── app.py                    # Lambda handler (main entry point)
+│   ├── classification_pipeline.py # ONNX model inference
+│   └── llm_pipeline.py           # OpenAI API integration
+├── models/
+│   ├── classes.txt               # Disease class labels
+│   ├── model_1_2025-11-30_02-16-31.onnx
+│   └── model2_2025-11-30_03-02-21.onnx
+├── test/                         # Test images organized by class
+├── evaluate_model.py             # Model evaluation script
+├── Dockerfile                    # Container definition
+├── deploy.sh                     # Deployment script
+├── requirements.txt              # Python dependencies
+└── README.md                     # This file
+```
+
+## Dependencies
+
+- `onnxruntime` - ONNX model inference
+- `numpy==1.26.4` - Numerical operations
+- `Pillow` - Image processing
+- `openai` - OpenAI API client
+- `python-dotenv` - Environment variable management
 
 ## Setup
 
 ### Local Development
 
-1. Install dependencies:
-```bash
-pip install -r requirements.txt
+1. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Set up environment variables**:
+   Create a `.env` file in the lambda directory:
+   ```
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
+
+3. **Test locally**:
+   ```bash
+   python src/app.py
+   ```
+
+## API Usage
+
+### Request Format
+
+```json
+{
+  "image": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+  "age": 32,
+  "gender": "male"
+}
 ```
 
-2. Run the application:
-```bash
-python main.py
+**Parameters:**
+- `image` (required): Base64-encoded image string (with or without data URL prefix)
+- `age` (optional): Patient age for assessment
+- `gender` (optional): Patient gender for assessment
+
+### Response Format
+
+```json
+{
+  "statusCode": 200,
+  "body": {
+    "classification": {
+      "disease_name": "Melanoma"
+    },
+    "llm_assessment": {
+      "disease_description": "A brief description of the condition",
+      "severity_level": "High",
+      "immediate_action": "Seek immediate medical attention",
+      "things_to_keep_in_mind": [
+        "Monitor for changes",
+        "Avoid sun exposure",
+        "Keep the area clean"
+      ],
+      "consult_doctor": "Yes",
+      "consult_doctor_reasoning": "High-risk condition requiring professional evaluation"
+    }
+  }
+}
 ```
 
-Or using uvicorn directly:
-```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+### Error Responses
+
+**400 Bad Request** - Missing image:
+```json
+{
+  "statusCode": 400,
+  "body": {
+    "error": "No image provided."
+  }
+}
 ```
 
-3. Access the API:
-- API: http://localhost:8000
-- Interactive docs: http://localhost:8000/docs
-- Alternative docs: http://localhost:8000/redoc
-
-## API Endpoints
-
-### Health Check
-- `GET /` - Basic health check
-- `GET /health` - Detailed health check with model status
-
-### Prediction
-- `POST /predict` - Predict from a single image
-  - Body: `multipart/form-data` with `file` field
-  - Returns: JSON with predicted class and confidence
-
-- `POST /predict/batch` - Predict from multiple images
-  - Body: `multipart/form-data` with multiple `files`
-  - Returns: JSON array with results for each image
-
-## Testing the API
-
-### Using curl:
-```bash
-curl -X POST "http://localhost:8000/predict" \
-  -H "accept: application/json" \
-  -H "Content-Type: multipart/form-data" \
-  -F "file=@path/to/your/image.jpg"
+**500 Internal Server Error**:
+```json
+{
+  "statusCode": 500,
+  "body": {
+    "error": "Error message details"
+  }
+}
 ```
 
-### Using Python:
-```python
-import requests
+## Deployment
 
-url = "http://localhost:8000/predict"
-files = {"file": open("path/to/image.jpg", "rb")}
-response = requests.post(url, files=files)
-print(response.json())
-```
+1. **Configure deployment settings**:
+   Edit `deploy.sh` and update:
+   - `REGION`: AWS region (default: `eu-central-1`)
+   - `ACCOUNT_ID`: Your AWS account ID
+   - `REPO_NAME`: ECR repository name (default: `skinguard`)
+   - `FUNCTION_NAME`: Lambda function name (default: `skinguard-function`)
 
-## AWS Deployment Options
+2. **Deploy**:
+   ```bash
+   chmod +x deploy.sh
+   ./deploy.sh
+   ```
 
-### Option 1: AWS Lambda (Serverless)
-
-1. **Install dependencies for Lambda:**
-```bash
-pip install -r requirements.txt -t .
-```
-
-2. **Create a Lambda handler** (create `lambda_handler.py`):
-```python
-from mangum import Mangum
-from main import app
-
-handler = Mangum(app)
-```
-
-3. **Add to requirements.txt:**
-```
-mangum==0.17.0
-```
-
-4. **Package for Lambda:**
-```bash
-zip -r lambda-deployment.zip . -x "*.git*" "*.md" "__pycache__/*"
-```
-
-5. **Deploy via AWS Console or CLI:**
-- Upload the zip file
-- Set handler to `lambda_handler.handler`
-- Set timeout to 30+ seconds
-- Increase memory to 1024MB+ (for model loading)
-
-### Option 2: AWS ECS/Fargate (Container)
-
-1. **Build Docker image:**
-```bash
-docker build -t skinguard-api .
-```
-
-2. **Tag for ECR:**
-```bash
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
-docker tag skinguard-api:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/skinguard-api:latest
-docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/skinguard-api:latest
-```
-
-3. **Create ECS Task Definition:**
-- Use the pushed image
-- Set port mapping: 8000
-- Configure memory: 2GB+
-- Configure CPU: 1 vCPU+
-
-4. **Create ECS Service:**
-- Use Fargate launch type
-- Configure load balancer if needed
-
-### Option 3: AWS EC2
-
-1. **Launch EC2 instance:**
-- Use Ubuntu/Amazon Linux AMI
-- t3.medium or larger (for model inference)
-
-2. **SSH into instance and setup:**
-```bash
-sudo apt-get update
-sudo apt-get install -y python3-pip docker.io
-git clone <your-repo>
-cd skinguard-backend
-pip3 install -r requirements.txt
-```
-
-3. **Run with systemd service** (create `/etc/systemd/system/skinguard.service`):
-```ini
-[Unit]
-Description=SkinGuard API
-After=network.target
-
-[Service]
-Type=simple
-User=ubuntu
-WorkingDirectory=/home/ubuntu/skinguard-backend
-ExecStart=/usr/bin/python3 main.py
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-4. **Enable and start:**
-```bash
-sudo systemctl enable skinguard
-sudo systemctl start skinguard
-```
-
-5. **Configure security group:**
-- Allow inbound traffic on port 8000
-
-### Option 4: AWS App Runner (Recommended for simplicity)
-
-1. **Create `apprunner.yaml`:**
-```yaml
-version: 1.0
-runtime: python3
-build:
-  commands:
-    build:
-      - pip install -r requirements.txt
-run:
-  runtime-version: 3.11
-  command: uvicorn main:app --host 0.0.0.0 --port 8000
-  network:
-    port: 8000
-    env: PORT
-  env:
-    - name: PORT
-      value: "8000"
-```
-
-2. **Deploy via AWS Console:**
-- Go to AWS App Runner
-- Create new service
-- Connect to your GitHub/CodeCommit repository
-- App Runner will auto-detect and deploy
-
-## Configuration
-
-### Model Settings
-
-Update these in `main.py` based on your model:
-- `IMAGE_SIZE`: Input image size (default: 224)
-- `MEAN` and `STD`: Normalization values
-- `class_names`: Output class names
-
-### CORS Settings
-
-For production, update CORS origins in `main.py`:
-```python
-allow_origins=["https://yourdomain.com"]
-```
-
-## Environment Variables
-
-You can use environment variables for configuration:
-- `MODEL_PATH`: Path to model file (default: `model/model2_2025-11-30_03-02-21.onnx`)
-- `PORT`: Server port (default: 8000)
-
-## Notes
-
-- The model is loaded once at startup for better performance
-- Image preprocessing follows ImageNet normalization standards
-- Adjust class names in the `predict()` function based on your model's output
-- For production, consider adding authentication/authorization
-- Add rate limiting for production use
-- Consider using AWS API Gateway in front of Lambda for additional features
 
